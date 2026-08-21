@@ -50,6 +50,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register application services
 builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<BookingService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
