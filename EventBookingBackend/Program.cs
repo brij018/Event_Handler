@@ -11,13 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Configure Swagger/OpenAPI with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Event Booking API", Version = "v1" });
 
-    // Add JWT Bearer auth to Swagger UI
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -78,18 +77,30 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Configure CORS to allow Angular frontend
+// Configure CORS to allow Angular frontend development on both localhost and 127.0.0.1
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularDev", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(
+                  "http://localhost:4200",
+                  "https://localhost:4200",
+                  "http://127.0.0.1:4200",
+                  "https://127.0.0.1:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
+
+// Seed initial database records if needed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbInitializer.SeedAsync(db);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -98,13 +109,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAngularDev");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Minimal test/health endpoint for Phase 0 verification
+// Minimal health endpoint
 app.MapGet("/test", () => "Event Booking Backend is running!")
     .WithName("Test")
     .WithOpenApi();
