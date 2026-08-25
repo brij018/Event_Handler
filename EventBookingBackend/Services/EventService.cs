@@ -23,28 +23,28 @@ namespace EventBookingBackend.Services
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 6;
 
-            var query = _context.Events
+            var baseQuery = _context.Events
                 .AsNoTracking()
-                .Include(e => e.CreatedBy)
-                .Include(e => e.Bookings)
                 .AsQueryable();
 
             if (date.HasValue)
             {
                 var filterDate = date.Value.Date;
                 var nextDate = filterDate.AddDays(1);
-                query = query.Where(e => e.EventDate >= filterDate.ToUniversalTime()
-                                      && e.EventDate < nextDate.ToUniversalTime());
+                baseQuery = baseQuery.Where(e => e.EventDate >= filterDate.ToUniversalTime()
+                                              && e.EventDate < nextDate.ToUniversalTime());
             }
 
             if (!string.IsNullOrWhiteSpace(venue))
             {
-                query = query.Where(e => e.Venue.ToLower().Contains(venue.ToLower()));
+                baseQuery = baseQuery.Where(e => e.Venue.ToLower().Contains(venue.ToLower()));
             }
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await baseQuery.CountAsync();
 
-            var events = await query
+            var events = await baseQuery
+                .Include(e => e.CreatedBy)
+                .Include(e => e.Bookings)
                 .OrderBy(e => e.EventDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
