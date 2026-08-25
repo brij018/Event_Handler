@@ -1,0 +1,120 @@
+<div class="events-page">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Upcoming Events</h1>
+      <p class="subtitle">Discover, explore, and book seats for university events and conferences</p>
+    </div>
+    @if (authService.isAdminSignal()) {
+      <div class="header-actions">
+        <a routerLink="/admin/events/new" class="btn btn-primary">
+          <span class="plus-icon">+</span> Create Event
+        </a>
+      </div>
+    }
+  </div>
+
+  @if (actionMessage()) {
+    <div class="alert" [class.alert-success]="actionMessage()?.type === 'success'" [class.alert-danger]="actionMessage()?.type === 'error'">
+      {{ actionMessage()?.text }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <div class="spinner-large"></div>
+      <p>Loading events...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-container state-error">
+      <div class="error-icon">⚠️</div>
+      <h3>{{ errorMessage() }}</h3>
+      <button type="button" class="btn btn-outline" (click)="loadEvents()">Try Again</button>
+    </div>
+  } @else if (events().length === 0) {
+    <div class="state-container state-empty">
+      <div class="empty-icon">📅</div>
+      <h3>No events found</h3>
+      <p>There are no upcoming events scheduled at the moment.</p>
+      @if (authService.isAdminSignal()) {
+        <a routerLink="/admin/events/new" class="btn btn-primary">Create First Event</a>
+      }
+    </div>
+  } @else {
+    <div class="events-grid">
+      @for (event of events(); track event.id) {
+        <div class="event-card">
+          <div class="card-header">
+            <div class="price-tag" [class.price-free]="event.price === 0">
+              {{ event.price === 0 ? 'Free' : (event.price | currency:'USD':'symbol':'1.2-2') }}
+            </div>
+            <h2 class="event-title">{{ event.title }}</h2>
+          </div>
+
+          <div class="card-body">
+            @if (event.description) {
+              <p class="event-description">{{ event.description }}</p>
+            }
+
+            <div class="event-meta">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span class="meta-text">{{ event.venue }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">📅</span>
+                <span class="meta-text">{{ event.eventDate | date:'fullDate' }}</span>
+              </div>
+              @if (event.startTime) {
+                <div class="meta-item">
+                  <span class="meta-icon">⏰</span>
+                  <span class="meta-text">{{ event.startTime }}</span>
+                </div>
+              }
+              <div class="meta-item">
+                <span class="meta-icon">👥</span>
+                <span class="meta-text">{{ event.capacity }} total seats</span>
+              </div>
+              @if (event.createdByName) {
+                <div class="meta-item organizer">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">By {{ event.createdByName }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <a [routerLink]="['/events', event.id]" class="btn btn-outline btn-sm">View Details</a>
+
+            @if (authService.isAuthenticatedSignal()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="onBookNow(event)">
+                Book Now
+              </button>
+            }
+
+            @if (authService.isAdminSignal()) {
+              <div class="admin-buttons">
+                <a [routerLink]="['/admin/events/edit', event.id]" class="btn btn-secondary btn-sm" title="Edit Event">
+                  ✏️ Edit
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  [disabled]="deletingId() === event.id"
+                  (click)="onDelete(event)"
+                  title="Delete Event"
+                >
+                  @if (deletingId() === event.id) {
+                    ...
+                  } @else {
+                    🗑️ Delete
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,143 @@
+<div class="event-detail-page">
+  <div class="navigation-back">
+    <a routerLink="/events" class="back-link">
+      <span class="arrow">←</span> Back to all events
+    </a>
+  </div>
+
+  @if (actionError()) {
+    <div class="alert alert-danger">
+      {{ actionError() }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <div class="spinner-large"></div>
+      <p>Loading event details...</p>
+    </div>
+  } @else if (notFound()) {
+    <div class="state-container state-not-found">
+      <div class="error-icon">🔍</div>
+      <h2>Event Not Found</h2>
+      <p>The event you are looking for does not exist or may have been removed.</p>
+      <a routerLink="/events" class="btn btn-primary">Browse Other Events</a>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-container state-error">
+      <div class="error-icon">⚠️</div>
+      <h3>{{ errorMessage() }}</h3>
+      <a routerLink="/events" class="btn btn-outline">Back to Events</a>
+    </div>
+  } @else if (event(); as e) {
+    <div class="event-hero">
+      <div class="hero-header">
+        <div class="price-badge" [class.price-free]="e.price === 0">
+          {{ e.price === 0 ? 'Free Event' : (e.price | currency:'USD':'symbol':'1.2-2') }}
+        </div>
+        <h1 class="hero-title">{{ e.title }}</h1>
+        @if (e.createdByName) {
+          <p class="hero-organizer">Organized by <strong>{{ e.createdByName }}</strong></p>
+        }
+      </div>
+
+      <div class="hero-grid">
+        <!-- Main details -->
+        <div class="hero-main">
+          <div class="section-card">
+            <h3>About This Event</h3>
+            <p class="event-full-description">
+              {{ e.description || 'No detailed description provided for this event.' }}
+            </p>
+          </div>
+
+          <div class="section-card">
+            <h3>Event Information</h3>
+            <div class="info-grid">
+              <div class="info-box">
+                <span class="info-icon">📍</span>
+                <div>
+                  <span class="info-label">Venue</span>
+                  <span class="info-value">{{ e.venue }}</span>
+                </div>
+              </div>
+
+              <div class="info-box">
+                <span class="info-icon">📅</span>
+                <div>
+                  <span class="info-label">Date</span>
+                  <span class="info-value">{{ e.eventDate | date:'fullDate' }}</span>
+                </div>
+              </div>
+
+              @if (e.startTime) {
+                <div class="info-box">
+                  <span class="info-icon">⏰</span>
+                  <div>
+                    <span class="info-label">Time</span>
+                    <span class="info-value">{{ e.startTime }}</span>
+                  </div>
+                </div>
+              }
+
+              <div class="info-box">
+                <span class="info-icon">👥</span>
+                <div>
+                  <span class="info-label">Capacity</span>
+                  <span class="info-value">{{ e.capacity }} Seats Available</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar / Actions -->
+        <div class="hero-sidebar">
+          <div class="action-card">
+            <div class="pricing-summary">
+              <span class="price-label">Ticket Price</span>
+              <span class="price-amount">
+                {{ e.price === 0 ? 'Free' : (e.price | currency:'USD':'symbol':'1.2-2') }}
+              </span>
+            </div>
+
+            @if (authService.isAuthenticatedSignal()) {
+              <button type="button" class="btn btn-primary btn-block" (click)="onBookNow()">
+                🎟️ Book Now
+              </button>
+              <p class="auth-hint">Logged in as {{ authService.currentUser()?.name }}</p>
+            } @else {
+              <a [routerLink]="['/login']" [queryParams]="{ returnUrl: '/events/' + e.id }" class="btn btn-primary btn-block">
+                Sign In to Book
+              </a>
+              <p class="auth-hint">You must be logged in to reserve seats for this event.</p>
+            }
+
+            @if (authService.isAdminSignal()) {
+              <div class="admin-panel">
+                <h4>Admin Actions</h4>
+                <div class="admin-action-buttons">
+                  <a [routerLink]="['/admin/events/edit', e.id]" class="btn btn-secondary btn-block">
+                    ✏️ Edit Event
+                  </a>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-block"
+                    [disabled]="isDeleting()"
+                    (click)="onDelete()"
+                  >
+                    @if (isDeleting()) {
+                      Deleting...
+                    } @else {
+                      🗑️ Delete Event
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

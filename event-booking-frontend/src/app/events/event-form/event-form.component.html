@@ -1,0 +1,184 @@
+<div class="event-form-page">
+  <div class="navigation-back">
+    <a routerLink="/events" class="back-link">
+      <span class="arrow">←</span> Back to events
+    </a>
+  </div>
+
+  <div class="form-card">
+    <div class="form-header">
+      <h2>{{ isEditMode() ? 'Edit Event' : 'Create New Event' }}</h2>
+      <p class="subtitle">
+        {{ isEditMode() ? 'Update the details for this event.' : 'Fill in the information to schedule a new university event.' }}
+      </p>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading event data...</p>
+      </div>
+    } @else {
+      <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" novalidate>
+        <!-- Title -->
+        <div class="form-group">
+          <label for="title">Event Title <span class="required">*</span></label>
+          <input
+            type="text"
+            id="title"
+            formControlName="title"
+            class="form-control"
+            [class.is-invalid]="f['title'].touched && f['title'].invalid"
+            placeholder="e.g. Annual Tech Symposium 2026"
+          />
+          @if (f['title'].touched && f['title'].invalid) {
+            <div class="invalid-feedback">
+              @if (f['title'].errors?.['required']) {
+                <span>Title is required.</span>
+              }
+              @if (f['title'].errors?.['maxlength']) {
+                <span>Title cannot exceed 200 characters.</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="form-control"
+            [class.is-invalid]="f['description'].touched && f['description'].invalid"
+            placeholder="Describe the event, agenda, speakers, etc."
+          ></textarea>
+          @if (f['description'].touched && f['description'].invalid) {
+            <div class="invalid-feedback">
+              <span>Description cannot exceed 2000 characters.</span>
+            </div>
+          }
+        </div>
+
+        <!-- Venue -->
+        <div class="form-group">
+          <label for="venue">Venue / Location <span class="required">*</span></label>
+          <input
+            type="text"
+            id="venue"
+            formControlName="venue"
+            class="form-control"
+            [class.is-invalid]="f['venue'].touched && f['venue'].invalid"
+            placeholder="e.g. Main Auditorium, Campus A"
+          />
+          @if (f['venue'].touched && f['venue'].invalid) {
+            <div class="invalid-feedback">
+              @if (f['venue'].errors?.['required']) {
+                <span>Venue is required.</span>
+              }
+              @if (f['venue'].errors?.['maxlength']) {
+                <span>Venue cannot exceed 300 characters.</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Date & Time Row -->
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="eventDate">Event Date <span class="required">*</span></label>
+            <input
+              type="date"
+              id="eventDate"
+              formControlName="eventDate"
+              class="form-control"
+              [class.is-invalid]="f['eventDate'].touched && f['eventDate'].invalid"
+            />
+            @if (f['eventDate'].touched && f['eventDate'].invalid) {
+              <div class="invalid-feedback">
+                @if (f['eventDate'].errors?.['required']) {
+                  <span>Event date is required.</span>
+                }
+                @if (f['eventDate'].errors?.['pastDate']) {
+                  <span>Event date must be in the future.</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-group col">
+            <label for="startTime">Start Time</label>
+            <input
+              type="time"
+              id="startTime"
+              formControlName="startTime"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <!-- Capacity & Price Row -->
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="capacity">Total Capacity (Seats) <span class="required">*</span></label>
+            <input
+              type="number"
+              id="capacity"
+              formControlName="capacity"
+              class="form-control"
+              [class.is-invalid]="f['capacity'].touched && f['capacity'].invalid"
+              min="1"
+            />
+            @if (f['capacity'].touched && f['capacity'].invalid) {
+              <div class="invalid-feedback">
+                @if (f['capacity'].errors?.['required']) {
+                  <span>Capacity is required.</span>
+                }
+                @if (f['capacity'].errors?.['min']) {
+                  <span>Capacity must be at least 1.</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-group col">
+            <label for="price">Ticket Price ($) <span class="required">*</span></label>
+            <input
+              type="number"
+              id="price"
+              formControlName="price"
+              class="form-control"
+              [class.is-invalid]="f['price'].touched && f['price'].invalid"
+              min="0"
+              step="0.01"
+            />
+            @if (f['price'].touched && f['price'].invalid) {
+              <div class="invalid-feedback">
+                <span>Price cannot be negative.</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <a routerLink="/events" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span class="spinner"></span> Saving...
+            } @else {
+              {{ isEditMode() ? 'Save Changes' : 'Create Event' }}
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>
