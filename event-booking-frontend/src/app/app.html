@@ -10,7 +10,7 @@
     <nav class="nav-links">
       <a routerLink="/events" routerLinkActive="active" class="nav-link">Events</a>
       @if (authService.isAuthenticatedSignal()) {
-        <a routerLink="/bookings" routerLinkActive="active" class="nav-link">My Bookings</a>
+        <a routerLink="/bookings/my" routerLinkActive="active" class="nav-link">My Bookings</a>
         @if (authService.isAdminSignal()) {
           <a routerLink="/admin" routerLinkActive="active" class="nav-link nav-link-admin">Admin</a>
         }

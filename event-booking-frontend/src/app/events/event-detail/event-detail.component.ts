@@ -60,14 +60,18 @@ export class EventDetailComponent implements OnInit {
   }
 
   onBookNow(): void {
+    const currentEvent = this.event();
+    if (!currentEvent) return;
+
     if (!this.authService.isAuthenticated()) {
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: this.router.url }
+        queryParams: { returnUrl: `/book?eventId=${currentEvent.id}` }
       });
       return;
     }
-    // Placeholder action for booking (Phase 7 feature)
-    window.alert(`Booking feature placeholder: You selected "${this.event()?.title}". Complete booking UI will be available in Phase 7.`);
+    this.router.navigate(['/book'], {
+      queryParams: { eventId: currentEvent.id }
+    });
   }
 
   onDelete(): void {

@@ -45,11 +45,10 @@ export class EventListComponent implements OnInit {
 
   onBookNow(event: EventItem): void {
     if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: `/events/${event.id}` } });
+      this.router.navigate(['/login'], { queryParams: { returnUrl: `/book?eventId=${event.id}` } });
       return;
     }
-    // Navigate to event detail (Phase 7 will attach booking modal/page)
-    this.router.navigate(['/events', event.id]);
+    this.router.navigate(['/book'], { queryParams: { eventId: event.id } });
   }
 
   onDelete(event: EventItem): void {

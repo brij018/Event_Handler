@@ -1,0 +1,132 @@
+<div class="booking-page">
+  <div class="navigation-back">
+    <a [routerLink]="event() ? ['/events', event()!.id] : '/events'" class="back-link">
+      <span class="arrow">←</span> Back to {{ event() ? 'Event Details' : 'Events' }}
+    </a>
+  </div>
+
+  @if (isLoadingEvent()) {
+    <div class="state-container">
+      <div class="spinner-large"></div>
+      <p>Loading event information...</p>
+    </div>
+  } @else if (confirmedBooking(); as booking) {
+    <!-- Success Confirmation Card -->
+    <div class="confirmation-card">
+      <div class="success-icon">🎉</div>
+      <h2>Booking Confirmed!</h2>
+      <p class="success-subtitle">
+        Your reservation has been successfully confirmed. A summary of your booking is below:
+      </p>
+
+      <div class="booking-receipt">
+        <div class="receipt-row">
+          <span class="receipt-label">Booking Reference</span>
+          <span class="receipt-value ref-badge">#{{ booking.id }}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Event</span>
+          <span class="receipt-value">{{ booking.eventTitle }}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Reserved By</span>
+          <span class="receipt-value">{{ booking.userName }} ({{ booking.userEmail }})</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Seats Reserved</span>
+          <span class="receipt-value"><strong>{{ booking.numberOfSeats }} seat(s)</strong></span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Status</span>
+          <span class="receipt-value status-badge">{{ booking.status }}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Booking Time</span>
+          <span class="receipt-value">{{ booking.bookingDate | date:'medium' }}</span>
+        </div>
+      </div>
+
+      <div class="confirmation-actions">
+        <a routerLink="/bookings/my" class="btn btn-primary">View My Bookings</a>
+        <a routerLink="/events" class="btn btn-outline">Browse More Events</a>
+      </div>
+    </div>
+  } @else {
+    <div class="booking-card">
+      <div class="card-header">
+        <h2>Reserve Your Seats</h2>
+        <p class="subtitle">Complete your booking for this event</p>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if (event(); as e) {
+        <!-- Event Mini Summary -->
+        <div class="event-summary-box">
+          <div class="summary-title">{{ e.title }}</div>
+          <div class="summary-details">
+            <span>📍 {{ e.venue }}</span>
+            <span>📅 {{ e.eventDate | date:'fullDate' }}</span>
+            @if (e.startTime) {
+              <span>⏰ {{ e.startTime }}</span>
+            }
+            <span class="price-pill">
+              {{ e.price === 0 ? 'Free' : (e.price | currency:'USD':'symbol':'1.2-2') }} / ticket
+            </span>
+          </div>
+        </div>
+
+        <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" novalidate>
+          <div class="form-group">
+            <label for="numberOfSeats">Number of Seats <span class="required">*</span></label>
+            <input
+              type="number"
+              id="numberOfSeats"
+              formControlName="numberOfSeats"
+              class="form-control"
+              [class.is-invalid]="f['numberOfSeats'].touched && f['numberOfSeats'].invalid"
+              min="1"
+              max="100"
+            />
+            @if (f['numberOfSeats'].touched && f['numberOfSeats'].invalid) {
+              <div class="invalid-feedback">
+                @if (f['numberOfSeats'].errors?.['required']) {
+                  <span>Please enter the number of seats.</span>
+                }
+                @if (f['numberOfSeats'].errors?.['min']) {
+                  <span>You must reserve at least 1 seat.</span>
+                }
+                @if (f['numberOfSeats'].errors?.['max']) {
+                  <span>Maximum 100 seats per single booking.</span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Total Calculation -->
+          <div class="total-box">
+            <div class="total-label">Estimated Total</div>
+            <div class="total-amount">
+              {{ totalCost() === 0 ? 'Free' : (totalCost() | currency:'USD':'symbol':'1.2-2') }}
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a [routerLink]="['/events', e.id]" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+              @if (isSubmitting()) {
+                <span class="spinner"></span> Confirming...
+              } @else {
+                Confirm Booking
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  }
+</div>

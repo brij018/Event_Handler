@@ -1,0 +1,88 @@
+<div class="my-bookings-page">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>My Bookings</h1>
+      <p class="subtitle">View and manage all your event seat reservations</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/events" class="btn btn-outline">Browse Events</a>
+    </div>
+  </div>
+
+  @if (actionMessage()) {
+    <div class="alert" [class.alert-success]="actionMessage()?.type === 'success'" [class.alert-danger]="actionMessage()?.type === 'error'">
+      {{ actionMessage()?.text }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <div class="spinner-large"></div>
+      <p>Loading your bookings...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-container state-error">
+      <div class="error-icon">⚠️</div>
+      <h3>{{ errorMessage() }}</h3>
+      <button type="button" class="btn btn-outline" (click)="loadMyBookings()">Try Again</button>
+    </div>
+  } @else if (bookings().length === 0) {
+    <div class="state-container state-empty">
+      <div class="empty-icon">🎟️</div>
+      <h3>You have no bookings yet</h3>
+      <p>You have not reserved seats for any events yet. Check out upcoming events to get started!</p>
+      <a routerLink="/events" class="btn btn-primary">Explore Events</a>
+    </div>
+  } @else {
+    <div class="bookings-list">
+      @for (booking of bookings(); track booking.id) {
+        <div class="booking-card" [class.is-cancelled]="booking.status === 'Cancelled'">
+          <div class="card-left">
+            <div class="ref-row">
+              <span class="booking-ref">#{{ booking.id }}</span>
+              <span
+                class="status-pill"
+                [class.status-confirmed]="booking.status === 'Confirmed'"
+                [class.status-cancelled]="booking.status === 'Cancelled'"
+              >
+                {{ booking.status }}
+              </span>
+            </div>
+            <h2 class="event-title">
+              <a [routerLink]="['/events', booking.eventId]">{{ booking.eventTitle }}</a>
+            </h2>
+            <div class="booking-meta">
+              <span class="meta-item">
+                <span class="meta-icon">👥</span>
+                <strong>{{ booking.numberOfSeats }} seat(s)</strong>
+              </span>
+              <span class="meta-item">
+                <span class="meta-icon">🕒</span>
+                Booked on {{ booking.bookingDate | date:'medium' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="card-right">
+            @if (booking.status === 'Confirmed') {
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                [disabled]="cancellingId() === booking.id"
+                (click)="onCancelBooking(booking)"
+              >
+                @if (cancellingId() === booking.id) {
+                  Cancelling...
+                } @else {
+                  Cancel Booking
+                }
+              </button>
+            } @else {
+              <span class="cancelled-label">Cancelled</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

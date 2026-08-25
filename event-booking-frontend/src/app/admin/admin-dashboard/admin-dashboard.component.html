@@ -1,0 +1,148 @@
+<div class="admin-dashboard-page">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">System overview, event management, and all user bookings</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/admin/events/new" class="btn btn-primary">+ Create New Event</a>
+    </div>
+  </div>
+
+  @if (actionMessage()) {
+    <div class="alert" [class.alert-success]="actionMessage()?.type === 'success'" [class.alert-danger]="actionMessage()?.type === 'error'">
+      {{ actionMessage()?.text }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <div class="spinner-large"></div>
+      <p>Loading dashboard metrics and bookings...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-container state-error">
+      <div class="error-icon">⚠️</div>
+      <h3>{{ errorMessage() }}</h3>
+      <button type="button" class="btn btn-outline" (click)="loadDashboardData()">Try Again</button>
+    </div>
+  } @else {
+    <!-- Summary Count Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon">📅</div>
+        <div class="metric-info">
+          <span class="metric-label">Total Events</span>
+          <span class="metric-value">{{ totalEvents() }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">🎟️</div>
+        <div class="metric-info">
+          <span class="metric-label">Total Bookings</span>
+          <span class="metric-value">{{ totalBookings() }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card metric-confirmed">
+        <div class="metric-icon">✅</div>
+        <div class="metric-info">
+          <span class="metric-label">Confirmed Bookings</span>
+          <span class="metric-value">{{ confirmedBookings() }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card metric-cancelled">
+        <div class="metric-icon">❌</div>
+        <div class="metric-info">
+          <span class="metric-label">Cancelled Bookings</span>
+          <span class="metric-value">{{ cancelledBookings() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Bookings Table Section -->
+    <div class="table-section">
+      <div class="section-header">
+        <h2>All System Bookings</h2>
+        <span class="count-tag">{{ totalBookings() }} total</span>
+      </div>
+
+      @if (bookings().length === 0) {
+        <div class="empty-table-state">
+          <p>No bookings found in the system.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ref ID</th>
+                <th>User / Attendee</th>
+                <th>Event Title</th>
+                <th>Seats</th>
+                <th>Status</th>
+                <th>Booking Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of bookings(); track b.id) {
+                <tr [class.row-cancelled]="b.status === 'Cancelled'">
+                  <td>
+                    <span class="booking-ref">#{{ b.id }}</span>
+                  </td>
+                  <td>
+                    <div class="user-cell">
+                      <strong>{{ b.userName }}</strong>
+                      <span class="user-email">{{ b.userEmail }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <a [routerLink]="['/events', b.eventId]" class="event-link">
+                      {{ b.eventTitle }}
+                    </a>
+                  </td>
+                  <td>
+                    <strong>{{ b.numberOfSeats }}</strong>
+                  </td>
+                  <td>
+                    <span
+                      class="status-pill"
+                      [class.status-confirmed]="b.status === 'Confirmed'"
+                      [class.status-cancelled]="b.status === 'Cancelled'"
+                    >
+                      {{ b.status }}
+                    </span>
+                  </td>
+                  <td class="date-cell">
+                    {{ b.bookingDate | date:'medium' }}
+                  </td>
+                  <td>
+                    @if (b.status === 'Confirmed') {
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-xs"
+                        [disabled]="cancellingId() === b.id"
+                        (click)="onCancelBooking(b)"
+                      >
+                        @if (cancellingId() === b.id) {
+                          ...
+                        } @else {
+                          Cancel
+                        }
+                      </button>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -4,8 +4,9 @@ import { RegisterComponent } from './auth/register/register.component';
 import { EventListComponent } from './events/event-list/event-list.component';
 import { EventDetailComponent } from './events/event-detail/event-detail.component';
 import { EventFormComponent } from './events/event-form/event-form.component';
-import { BookingsPlaceholderComponent } from './bookings/bookings-placeholder.component';
-import { AdminPlaceholderComponent } from './admin/admin-placeholder.component';
+import { BookingFormComponent } from './bookings/booking-form/booking-form.component';
+import { MyBookingsComponent } from './bookings/my-bookings/my-bookings.component';
+import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/role.guard';
 
@@ -18,7 +19,34 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
-  // Admin-only event management routes
+  // Authenticated user booking routes
+  {
+    path: 'book',
+    component: BookingFormComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'book/:eventId',
+    component: BookingFormComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'bookings/my',
+    component: MyBookingsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'bookings',
+    redirectTo: 'bookings/my',
+    pathMatch: 'full'
+  },
+
+  // Admin-only dashboard and event management routes
+  {
+    path: 'admin',
+    component: AdminDashboardComponent,
+    canActivate: [authGuard, adminGuard]
+  },
   {
     path: 'admin/events/new',
     component: EventFormComponent,
@@ -28,18 +56,6 @@ export const routes: Routes = [
     path: 'admin/events/edit/:id',
     component: EventFormComponent,
     canActivate: [authGuard, adminGuard]
-  },
-  {
-    path: 'admin',
-    component: AdminPlaceholderComponent,
-    canActivate: [authGuard, adminGuard]
-  },
-
-  // Authenticated user booking routes
-  {
-    path: 'bookings',
-    component: BookingsPlaceholderComponent,
-    canActivate: [authGuard]
   },
 
   // Default redirect to public events list
