@@ -9,6 +9,17 @@ export interface EventItem {
   price: number;
   createdById: number;
   createdByName: string;
+  availableSeats: number;
+}
+
+export interface PaginatedEvents {
+  items: EventItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }
 
 export interface CreateEventRequest {

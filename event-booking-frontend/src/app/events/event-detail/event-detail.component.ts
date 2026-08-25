@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../event.service';
 import { EventItem } from '../models/event.model';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -17,6 +18,7 @@ export class EventDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly eventService = inject(EventService);
   readonly authService = inject(AuthService);
+  private readonly notification = inject(NotificationService);
 
   readonly event = signal<EventItem | null>(null);
   readonly isLoading = signal(true);
@@ -54,6 +56,7 @@ export class EventDetailComponent implements OnInit {
           this.notFound.set(true);
         } else {
           this.errorMessage.set('Unable to load event details. Please try again.');
+          this.notification.error('Failed to load event details.');
         }
       }
     });
@@ -61,7 +64,7 @@ export class EventDetailComponent implements OnInit {
 
   onBookNow(): void {
     const currentEvent = this.event();
-    if (!currentEvent) return;
+    if (!currentEvent || currentEvent.availableSeats <= 0) return;
 
     if (!this.authService.isAuthenticated()) {
       this.router.navigate(['/login'], {
@@ -87,11 +90,14 @@ export class EventDetailComponent implements OnInit {
     this.eventService.deleteEvent(currentEvent.id).subscribe({
       next: () => {
         this.isDeleting.set(false);
+        this.notification.success(`Event "${currentEvent.title}" was deleted.`);
         this.router.navigate(['/events']);
       },
       error: (err) => {
         this.isDeleting.set(false);
-        this.actionError.set(err.error?.message || 'Failed to delete event.');
+        const msg = err.error?.message || 'Failed to delete event. It may have active bookings.';
+        this.actionError.set(msg);
+        this.notification.error(msg);
       }
     });
   }

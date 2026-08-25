@@ -7,6 +7,7 @@ import { EventService } from '../../events/event.service';
 import { EventItem } from '../../events/models/event.model';
 import { BookingItem } from '../models/booking.model';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-booking-form',
@@ -22,6 +23,7 @@ export class BookingFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly authService = inject(AuthService);
+  private readonly notification = inject(NotificationService);
 
   readonly event = signal<EventItem | null>(null);
   readonly isLoadingEvent = signal(true);
@@ -42,7 +44,6 @@ export class BookingFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Check route param first (:eventId), then query param (?eventId)
     const paramId = this.route.snapshot.paramMap.get('eventId');
     const queryId = this.route.snapshot.queryParamMap.get('eventId');
     const idStr = paramId || queryId;
@@ -69,6 +70,10 @@ export class BookingFormComponent implements OnInit {
       next: (data) => {
         this.event.set(data);
         this.isLoadingEvent.set(false);
+
+        if (data.availableSeats <= 0) {
+          this.errorMessage.set('This event is completely sold out. No more bookings can be accepted.');
+        }
       },
       error: (err) => {
         this.isLoadingEvent.set(false);
@@ -76,6 +81,7 @@ export class BookingFormComponent implements OnInit {
           this.errorMessage.set('The specified event does not exist.');
         } else {
           this.errorMessage.set('Unable to load event details for booking.');
+          this.notification.error('Failed to load event details.');
         }
       }
     });
@@ -90,6 +96,11 @@ export class BookingFormComponent implements OnInit {
     const currentEvent = this.event();
     if (!currentEvent) return;
 
+    if (currentEvent.availableSeats <= 0) {
+      this.errorMessage.set('This event is sold out.');
+      return;
+    }
+
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
 
@@ -99,6 +110,7 @@ export class BookingFormComponent implements OnInit {
       next: (booking) => {
         this.isSubmitting.set(false);
         this.confirmedBooking.set(booking);
+        this.notification.success('Booking confirmed successfully!');
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -109,12 +121,17 @@ export class BookingFormComponent implements OnInit {
           } else {
             this.errorMessage.set(err.error?.message || 'Not enough seats available for this event.');
           }
+          this.notification.error(this.errorMessage()!);
         } else if (err.status === 400) {
-          this.errorMessage.set(err.error?.message || 'Please check your booking quantity.');
+          const msg = err.error?.message || 'Please check your booking quantity.';
+          this.errorMessage.set(msg);
+          this.notification.error(msg);
         } else if (err.status === 401) {
           this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
         } else {
-          this.errorMessage.set(err.error?.message || 'An error occurred while creating your booking. Please try again.');
+          const msg = err.error?.message || 'An error occurred while creating your booking.';
+          this.errorMessage.set(msg);
+          this.notification.error(msg);
         }
       }
     });

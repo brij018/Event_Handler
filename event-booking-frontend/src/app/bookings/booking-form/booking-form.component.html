@@ -77,55 +77,65 @@
             <span class="price-pill">
               {{ e.price === 0 ? 'Free' : (e.price | currency:'USD':'symbol':'1.2-2') }} / ticket
             </span>
+            <span class="seats-pill" [class.sold-out]="e.availableSeats <= 0">
+              {{ e.availableSeats <= 0 ? 'Sold Out' : e.availableSeats + ' seats available' }}
+            </span>
           </div>
         </div>
 
-        <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" novalidate>
-          <div class="form-group">
-            <label for="numberOfSeats">Number of Seats <span class="required">*</span></label>
-            <input
-              type="number"
-              id="numberOfSeats"
-              formControlName="numberOfSeats"
-              class="form-control"
-              [class.is-invalid]="f['numberOfSeats'].touched && f['numberOfSeats'].invalid"
-              min="1"
-              max="100"
-            />
-            @if (f['numberOfSeats'].touched && f['numberOfSeats'].invalid) {
-              <div class="invalid-feedback">
-                @if (f['numberOfSeats'].errors?.['required']) {
-                  <span>Please enter the number of seats.</span>
-                }
-                @if (f['numberOfSeats'].errors?.['min']) {
-                  <span>You must reserve at least 1 seat.</span>
-                }
-                @if (f['numberOfSeats'].errors?.['max']) {
-                  <span>Maximum 100 seats per single booking.</span>
-                }
-              </div>
-            }
-          </div>
-
-          <!-- Total Calculation -->
-          <div class="total-box">
-            <div class="total-label">Estimated Total</div>
-            <div class="total-amount">
-              {{ totalCost() === 0 ? 'Free' : (totalCost() | currency:'USD':'symbol':'1.2-2') }}
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <a [routerLink]="['/events', e.id]" class="btn btn-outline">Cancel</a>
-            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
-              @if (isSubmitting()) {
-                <span class="spinner"></span> Confirming...
-              } @else {
-                Confirm Booking
+        @if (e.availableSeats > 0) {
+          <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" novalidate>
+            <div class="form-group">
+              <label for="numberOfSeats">Number of Seats <span class="required">*</span></label>
+              <input
+                type="number"
+                id="numberOfSeats"
+                formControlName="numberOfSeats"
+                class="form-control"
+                [class.is-invalid]="f['numberOfSeats'].touched && f['numberOfSeats'].invalid"
+                min="1"
+                [max]="e.availableSeats"
+              />
+              @if (f['numberOfSeats'].touched && f['numberOfSeats'].invalid) {
+                <div class="invalid-feedback">
+                  @if (f['numberOfSeats'].errors?.['required']) {
+                    <span>Please enter the number of seats.</span>
+                  }
+                  @if (f['numberOfSeats'].errors?.['min']) {
+                    <span>You must reserve at least 1 seat.</span>
+                  }
+                  @if (f['numberOfSeats'].errors?.['max']) {
+                    <span>Cannot exceed {{ e.availableSeats }} available seat(s).</span>
+                  }
+                </div>
               }
-            </button>
+            </div>
+
+            <!-- Total Calculation -->
+            <div class="total-box">
+              <div class="total-label">Estimated Total</div>
+              <div class="total-amount">
+                {{ totalCost() === 0 ? 'Free' : (totalCost() | currency:'USD':'symbol':'1.2-2') }}
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <a [routerLink]="['/events', e.id]" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+                @if (isSubmitting()) {
+                  <span class="spinner"></span> Confirming...
+                } @else {
+                  Confirm Booking
+                }
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="sold-out-box">
+            <p>This event has reached full capacity. No tickets are currently available.</p>
+            <a routerLink="/events" class="btn btn-primary">Find Other Events</a>
           </div>
-        </form>
+        }
       }
     </div>
   }

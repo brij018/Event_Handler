@@ -18,18 +18,22 @@ namespace EventBookingBackend.Controllers
         }
 
         /// <summary>
-        /// GET /api/events — Public. Returns all events with optional date/venue filtering.
+        /// GET /api/events — Public. Returns paginated events with optional date/venue filtering.
         /// </summary>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAll([FromQuery] DateTime? date, [FromQuery] string? venue)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] DateTime? date,
+            [FromQuery] string? venue,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 6)
         {
-            var events = await _eventService.GetAllEventsAsync(date, venue);
-            return Ok(events);
+            var result = await _eventService.GetAllEventsAsync(date, venue, page, pageSize);
+            return Ok(result);
         }
 
         /// <summary>
-        /// GET /api/events/{id} — Public. Returns a single event by ID.
+        /// GET /api/events/{id} — Public. Returns a single event by ID with available seats.
         /// </summary>
         [HttpGet("{id}")]
         [AllowAnonymous]

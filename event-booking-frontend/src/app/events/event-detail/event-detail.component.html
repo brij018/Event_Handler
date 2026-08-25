@@ -32,8 +32,17 @@
   } @else if (event(); as e) {
     <div class="event-hero">
       <div class="hero-header">
-        <div class="price-badge" [class.price-free]="e.price === 0">
-          {{ e.price === 0 ? 'Free Event' : (e.price | currency:'USD':'symbol':'1.2-2') }}
+        <div class="badge-group">
+          <div class="price-badge" [class.price-free]="e.price === 0">
+            {{ e.price === 0 ? 'Free Event' : (e.price | currency:'USD':'symbol':'1.2-2') }}
+          </div>
+          @if (e.availableSeats <= 0) {
+            <div class="seats-badge badge-sold-out">Sold Out</div>
+          } @else if (e.availableSeats <= 5) {
+            <div class="seats-badge badge-urgent">{{ e.availableSeats }} seats left</div>
+          } @else {
+            <div class="seats-badge badge-available">{{ e.availableSeats }} seats left</div>
+          }
         </div>
         <h1 class="hero-title">{{ e.title }}</h1>
         @if (e.createdByName) {
@@ -83,8 +92,14 @@
               <div class="info-box">
                 <span class="info-icon">👥</span>
                 <div>
-                  <span class="info-label">Capacity</span>
-                  <span class="info-value">{{ e.capacity }} Seats Available</span>
+                  <span class="info-label">Availability</span>
+                  <span class="info-value">
+                    @if (e.availableSeats <= 0) {
+                      <strong class="text-danger">Sold Out</strong> (0 / {{ e.capacity }})
+                    } @else {
+                      <strong>{{ e.availableSeats }}</strong> / {{ e.capacity }} Seats Left
+                    }
+                  </span>
                 </div>
               </div>
             </div>
@@ -101,7 +116,12 @@
               </span>
             </div>
 
-            @if (authService.isAuthenticatedSignal()) {
+            @if (e.availableSeats <= 0) {
+              <button type="button" class="btn btn-disabled btn-block" disabled>
+                🚫 Sold Out
+              </button>
+              <p class="auth-hint">No more seats are available for this event.</p>
+            } @else if (authService.isAuthenticatedSignal()) {
               <button type="button" class="btn btn-primary btn-block" (click)="onBookNow()">
                 🎟️ Book Now
               </button>

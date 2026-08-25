@@ -12,5 +12,6 @@ namespace EventBookingBackend.DTOs
         public decimal Price { get; set; }
         public int CreatedById { get; set; }
         public string CreatedByName { get; set; } = string.Empty;
+        public int AvailableSeats { get; set; }
     }
 }

@@ -5,8 +5,8 @@ import { forkJoin } from 'rxjs';
 import { BookingService } from '../../bookings/booking.service';
 import { EventService } from '../../events/event.service';
 import { BookingItem } from '../../bookings/models/booking.model';
-import { EventItem } from '../../events/models/event.model';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -19,16 +19,16 @@ export class AdminDashboardComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly eventService = inject(EventService);
   readonly authService = inject(AuthService);
+  private readonly notification = inject(NotificationService);
 
   readonly bookings = signal<BookingItem[]>([]);
-  readonly events = signal<EventItem[]>([]);
+  readonly totalEventsCount = signal(0);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly actionMessage = signal<{ type: 'success' | 'error'; text: string } | null>(null);
   readonly cancellingId = signal<number | null>(null);
 
   // Summary counts
-  readonly totalEvents = computed(() => this.events().length);
+  readonly totalEvents = computed(() => this.totalEventsCount());
   readonly totalBookings = computed(() => this.bookings().length);
   readonly confirmedBookings = computed(() => this.bookings().filter(b => b.status === 'Confirmed').length);
   readonly cancelledBookings = computed(() => this.bookings().filter(b => b.status === 'Cancelled').length);
@@ -42,17 +42,18 @@ export class AdminDashboardComponent implements OnInit {
     this.errorMessage.set(null);
 
     forkJoin({
-      events: this.eventService.getEvents(),
+      eventsRes: this.eventService.getEvents(null, null, 1, 100),
       bookings: this.bookingService.getAllBookings()
     }).subscribe({
-      next: ({ events, bookings }) => {
-        this.events.set(events);
+      next: ({ eventsRes, bookings }) => {
+        this.totalEventsCount.set(eventsRes.totalCount);
         this.bookings.set(bookings);
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: () => {
         this.isLoading.set(false);
         this.errorMessage.set('Unable to load admin dashboard data. Please try again.');
+        this.notification.error('Failed to load dashboard data.');
       }
     });
   }
@@ -62,7 +63,6 @@ export class AdminDashboardComponent implements OnInit {
     if (!confirmed) return;
 
     this.cancellingId.set(booking.id);
-    this.actionMessage.set(null);
 
     this.bookingService.cancelBooking(booking.id).subscribe({
       next: () => {
@@ -70,17 +70,12 @@ export class AdminDashboardComponent implements OnInit {
         this.bookings.update((list) =>
           list.map((b) => (b.id === booking.id ? { ...b, status: 'Cancelled' } : b))
         );
-        this.actionMessage.set({
-          type: 'success',
-          text: `Booking #${booking.id} has been cancelled by Admin.`
-        });
+        this.notification.success(`Booking #${booking.id} cancelled by Admin.`);
       },
       error: (err) => {
         this.cancellingId.set(null);
-        this.actionMessage.set({
-          type: 'error',
-          text: err.error?.message || 'Failed to cancel booking.'
-        });
+        const msg = err.error?.message || 'Failed to cancel booking.';
+        this.notification.error(msg);
       }
     });
   }

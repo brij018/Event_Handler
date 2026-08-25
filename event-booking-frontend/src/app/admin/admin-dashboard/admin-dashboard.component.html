@@ -9,12 +9,6 @@
     </div>
   </div>
 
-  @if (actionMessage()) {
-    <div class="alert" [class.alert-success]="actionMessage()?.type === 'success'" [class.alert-danger]="actionMessage()?.type === 'error'">
-      {{ actionMessage()?.text }}
-    </div>
-  }
-
   @if (isLoading()) {
     <div class="state-container">
       <div class="spinner-large"></div>
@@ -48,7 +42,7 @@
       <div class="metric-card metric-confirmed">
         <div class="metric-icon">✅</div>
         <div class="metric-info">
-          <span class="metric-label">Confirmed Bookings</span>
+          <span class="metric-label">Confirmed</span>
           <span class="metric-value">{{ confirmedBookings() }}</span>
         </div>
       </div>
@@ -56,7 +50,7 @@
       <div class="metric-card metric-cancelled">
         <div class="metric-icon">❌</div>
         <div class="metric-info">
-          <span class="metric-label">Cancelled Bookings</span>
+          <span class="metric-label">Cancelled</span>
           <span class="metric-value">{{ cancelledBookings() }}</span>
         </div>
       </div>
@@ -113,7 +107,7 @@
                       [class.status-confirmed]="b.status === 'Confirmed'"
                       [class.status-cancelled]="b.status === 'Cancelled'"
                     >
-                      {{ b.status }}
+                      {{ b.status === 'Confirmed' ? '✓ CONFIRMED' : '✕ CANCELLED' }}
                     </span>
                   </td>
                   <td class="date-cell">

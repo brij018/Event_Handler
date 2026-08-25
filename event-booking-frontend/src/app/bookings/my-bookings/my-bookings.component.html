@@ -9,12 +9,6 @@
     </div>
   </div>
 
-  @if (actionMessage()) {
-    <div class="alert" [class.alert-success]="actionMessage()?.type === 'success'" [class.alert-danger]="actionMessage()?.type === 'error'">
-      {{ actionMessage()?.text }}
-    </div>
-  }
-
   @if (isLoading()) {
     <div class="state-container">
       <div class="spinner-large"></div>
@@ -45,7 +39,7 @@
                 [class.status-confirmed]="booking.status === 'Confirmed'"
                 [class.status-cancelled]="booking.status === 'Cancelled'"
               >
-                {{ booking.status }}
+                {{ booking.status === 'Confirmed' ? '✓ CONFIRMED' : '✕ CANCELLED' }}
               </span>
             </div>
             <h2 class="event-title">

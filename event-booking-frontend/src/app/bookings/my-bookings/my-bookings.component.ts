@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { BookingService } from '../booking.service';
 import { BookingItem } from '../models/booking.model';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-my-bookings',
@@ -15,11 +16,11 @@ import { AuthService } from '../../core/services/auth.service';
 export class MyBookingsComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   readonly authService = inject(AuthService);
+  private readonly notification = inject(NotificationService);
 
   readonly bookings = signal<BookingItem[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly actionMessage = signal<{ type: 'success' | 'error'; text: string } | null>(null);
   readonly cancellingId = signal<number | null>(null);
 
   ngOnInit(): void {
@@ -35,9 +36,10 @@ export class MyBookingsComponent implements OnInit {
         this.bookings.set(data);
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: () => {
         this.isLoading.set(false);
         this.errorMessage.set('Unable to load your bookings. Please check your connection.');
+        this.notification.error('Failed to load bookings.');
       }
     });
   }
@@ -47,30 +49,24 @@ export class MyBookingsComponent implements OnInit {
     if (!confirmed) return;
 
     this.cancellingId.set(booking.id);
-    this.actionMessage.set(null);
 
     this.bookingService.cancelBooking(booking.id).subscribe({
-      next: (res) => {
+      next: () => {
         this.cancellingId.set(null);
-        // Update booking status in local list
         this.bookings.update((list) =>
           list.map((b) => (b.id === booking.id ? { ...b, status: 'Cancelled' } : b))
         );
-        this.actionMessage.set({
-          type: 'success',
-          text: `Booking #${booking.id} for "${booking.eventTitle}" has been cancelled.`
-        });
+        this.notification.success(`Booking #${booking.id} for "${booking.eventTitle}" cancelled.`);
       },
       error: (err) => {
         this.cancellingId.set(null);
         if (err.status === 400 && err.error?.booking) {
-          // Already cancelled
           this.bookings.update((list) =>
             list.map((b) => (b.id === booking.id ? { ...b, status: 'Cancelled' } : b))
           );
         }
         const msg = err.error?.message || 'Failed to cancel booking. Please try again.';
-        this.actionMessage.set({ type: 'error', text: msg });
+        this.notification.error(msg);
       }
     });
   }

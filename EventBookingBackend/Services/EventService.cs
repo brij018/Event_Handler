@@ -1,6 +1,7 @@
 using EventBookingBackend.Data;
 using EventBookingBackend.DTOs;
 using EventBookingBackend.Models;
+using EventBookingBackend.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventBookingBackend.Services
@@ -15,18 +16,21 @@ namespace EventBookingBackend.Services
         }
 
         /// <summary>
-        /// Get all events with optional filtering by date and venue.
+        /// Get all events with optional filtering by date and venue, and server-side pagination.
         /// </summary>
-        public async Task<List<EventDto>> GetAllEventsAsync(DateTime? date, string? venue)
+        public async Task<PaginatedResult<EventDto>> GetAllEventsAsync(DateTime? date, string? venue, int page = 1, int pageSize = 6)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 6;
+
             var query = _context.Events
                 .AsNoTracking()
                 .Include(e => e.CreatedBy)
+                .Include(e => e.Bookings)
                 .AsQueryable();
 
             if (date.HasValue)
             {
-                // Filter by date portion of EventDate (UTC day match)
                 var filterDate = date.Value.Date;
                 var nextDate = filterDate.AddDays(1);
                 query = query.Where(e => e.EventDate >= filterDate.ToUniversalTime()
@@ -38,20 +42,33 @@ namespace EventBookingBackend.Services
                 query = query.Where(e => e.Venue.ToLower().Contains(venue.ToLower()));
             }
 
-            return await query
+            var totalCount = await query.CountAsync();
+
+            var events = await query
                 .OrderBy(e => e.EventDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(e => MapToDto(e))
                 .ToListAsync();
+
+            return new PaginatedResult<EventDto>
+            {
+                Items = events,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         /// <summary>
-        /// Get a single event by ID.
+        /// Get a single event by ID with calculated available seats.
         /// </summary>
         public async Task<EventDto?> GetEventByIdAsync(int id)
         {
             var eventEntity = await _context.Events
                 .AsNoTracking()
                 .Include(e => e.CreatedBy)
+                .Include(e => e.Bookings)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             return eventEntity == null ? null : MapToDto(eventEntity);
@@ -79,6 +96,7 @@ namespace EventBookingBackend.Services
 
             // Reload with CreatedBy navigation for the response
             await _context.Entry(eventEntity).Reference(e => e.CreatedBy).LoadAsync();
+            await _context.Entry(eventEntity).Collection(e => e.Bookings).LoadAsync();
 
             return MapToDto(eventEntity);
         }
@@ -90,6 +108,7 @@ namespace EventBookingBackend.Services
         {
             var eventEntity = await _context.Events
                 .Include(e => e.CreatedBy)
+                .Include(e => e.Bookings)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (eventEntity == null)
@@ -133,10 +152,16 @@ namespace EventBookingBackend.Services
         }
 
         /// <summary>
-        /// Map an Event entity to an EventDto.
+        /// Map an Event entity to an EventDto with real-time remaining capacity.
         /// </summary>
         private static EventDto MapToDto(Event e)
         {
+            var confirmedBookedSeats = e.Bookings != null
+                ? e.Bookings.Where(b => b.Status == BookingStatus.Confirmed).Sum(b => b.NumberOfSeats)
+                : 0;
+
+            var availableSeats = Math.Max(0, e.Capacity - confirmedBookedSeats);
+
             return new EventDto
             {
                 Id = e.Id,
@@ -148,7 +173,8 @@ namespace EventBookingBackend.Services
                 Capacity = e.Capacity,
                 Price = e.Price,
                 CreatedById = e.CreatedById,
-                CreatedByName = e.CreatedBy?.Name ?? string.Empty
+                CreatedByName = e.CreatedBy?.Name ?? string.Empty,
+                AvailableSeats = availableSeats
             };
         }
     }

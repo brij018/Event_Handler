@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CreateEventRequest, EventItem, UpdateEventRequest } from './models/event.model';
+import {
+  EventItem,
+  PaginatedEvents,
+  CreateEventRequest,
+  UpdateEventRequest
+} from './models/event.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,21 +17,31 @@ export class EventService {
   private readonly apiUrl = `${environment.apiUrl}/events`;
 
   /**
-   * Fetch all events with optional date and venue filters.
+   * Fetch paginated events with optional date and venue filters (Public).
    */
-  getEvents(date?: string, venue?: string): Observable<EventItem[]> {
-    let params = new HttpParams();
-    if (date) {
-      params = params.set('date', date);
+  getEvents(
+    date?: string | null,
+    venue?: string | null,
+    page: number = 1,
+    pageSize: number = 6
+  ): Observable<PaginatedEvents> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (date && date.trim() !== '') {
+      params = params.set('date', date.trim());
     }
-    if (venue) {
-      params = params.set('venue', venue);
+
+    if (venue && venue.trim() !== '') {
+      params = params.set('venue', venue.trim());
     }
-    return this.http.get<EventItem[]>(this.apiUrl, { params });
+
+    return this.http.get<PaginatedEvents>(this.apiUrl, { params });
   }
 
   /**
-   * Fetch a single event by ID.
+   * Fetch a single event by ID (Public).
    */
   getEventById(id: number): Observable<EventItem> {
     return this.http.get<EventItem>(`${this.apiUrl}/${id}`);
@@ -35,15 +50,15 @@ export class EventService {
   /**
    * Create a new event (Admin only).
    */
-  createEvent(event: CreateEventRequest): Observable<EventItem> {
-    return this.http.post<EventItem>(this.apiUrl, event);
+  createEvent(request: CreateEventRequest): Observable<EventItem> {
+    return this.http.post<EventItem>(this.apiUrl, request);
   }
 
   /**
-   * Update an existing event by ID (Admin only).
+   * Update an existing event (Admin only).
    */
-  updateEvent(id: number, event: UpdateEventRequest): Observable<EventItem> {
-    return this.http.put<EventItem>(`${this.apiUrl}/${id}`, event);
+  updateEvent(id: number, request: UpdateEventRequest): Observable<EventItem> {
+    return this.http.put<EventItem>(`${this.apiUrl}/${id}`, request);
   }
 
   /**
