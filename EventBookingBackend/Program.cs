@@ -49,6 +49,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register application services
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<BookingService>();
 
